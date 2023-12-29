@@ -45,6 +45,7 @@ export const postFidoRegistration = async function(payload, db) {
     attestationOpts.challenge = coerceToArrayBuffer(attestationOpts.challenge, "challenge");
     attestationOpts.factor = "either";
     attestationOpts.origin = "https://fido2-client.ranieri.dev.br";
+    payload.attestationResult.rawId = base64urlToArrayBuffer(payload.attestationResult.rawId);
 
     try {
         const registrationResult = await fidoInstance.attestationResult(payload.attestationResult, attestationOpts);
@@ -53,6 +54,22 @@ export const postFidoRegistration = async function(payload, db) {
         console.log("erro no registro: ", e);
     }
     
+}
+
+const base64urlToArrayBuffer = function(base64url) {
+    // Step 1: Add padding to the Base64url string if necessary
+    const paddedBase64 = base64url + '='.repeat((4 - base64url.length % 4) % 4);
+
+    // Step 2: Decode Base64 to Buffer
+    const buffer = Buffer.from(paddedBase64, 'base64');
+
+    // Step 3: Convert Buffer to Uint8Array
+    const uint8Array = new Uint8Array(buffer);
+
+    // Step 4: Convert Uint8Array to ArrayBuffer
+    const arrayBuffer = uint8Array.buffer;
+
+    return arrayBuffer;
 }
 
 const createFidoInstance = function(params) {
