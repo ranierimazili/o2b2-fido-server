@@ -44,6 +44,7 @@ export const postFidoRegistration = async function(payload, db) {
     //Converte o challenge para ByteArray para possibilitar a validação do attestation
     attestationOpts.challenge = coerceToArrayBuffer(attestationOpts.challenge, "challenge");
     attestationOpts.factor = "either";
+    attestationOpts.origin = "https://fido2-client.ranieri.dev.br";
 
     try {
         const registrationResult = await fidoInstance.attestationResult(payload.attestationResult, attestationOpts);
