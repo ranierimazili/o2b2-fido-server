@@ -33,7 +33,7 @@ export const postFidoRegistrationOptions = async function(payload, db) {
     const fidoInstance = createFidoInstance(payload);
     const attestationOpts = await fidoInstance.attestationOptions();
     //Converte o challenge para base64 para possibilitar o envio via JSON
-    attestationOpts.challenge = arrayBufferToBase64url(attestationOpts.challenge);
+    attestationOpts.challenge = arrayBufferToBase64(attestationOpts.challenge);
     db.save(`${payload.enrollmentId}-attestationOpts`, attestationOpts);
     return attestationOpts;
 }
@@ -42,10 +42,10 @@ export const postFidoRegistration = async function(payload, db) {
     const fidoInstance = createFidoInstance(payload);
     const attestationOpts = db.get(`${payload.enrollmentId}-attestationOpts`);
     //Converte o challenge para ByteArray para possibilitar a validação do attestation
-    attestationOpts.challenge = base64urlToArrayBuffer(attestationOpts.challenge);
+    attestationOpts.challenge = base64ToArrayBuffer(attestationOpts.challenge);
     attestationOpts.factor = "either";
     attestationOpts.origin = "https://fido2-client.ranieri.dev.br";
-    payload.attestationResult.rawId = base64urlToArrayBuffer(payload.attestationResult.rawId);
+    payload.attestationResult.rawId = base64ToArrayBuffer(payload.attestationResult.rawId);
 
     try {
         const registrationResult = await fidoInstance.attestationResult(payload.attestationResult, attestationOpts);
@@ -56,6 +56,30 @@ export const postFidoRegistration = async function(payload, db) {
     
 }
 
+function base64ToArrayBuffer(base64String) {
+    // Step 1: Convert Base64 to Buffer
+    const buffer = Buffer.from(base64String, 'base64');
+
+    // Step 2: Convert Buffer to Uint8Array
+    const uint8Array = new Uint8Array(buffer);
+
+    // Step 3: Convert Uint8Array to ArrayBuffer
+    const arrayBuffer = uint8Array.buffer;
+
+    return arrayBuffer;
+}
+
+function arrayBufferToBase64(arrayBuffer) {
+    // Step 1: Convert ArrayBuffer to Buffer
+    const buffer = Buffer.from(arrayBuffer);
+
+    // Step 2: Convert Buffer to Base64
+    const base64 = buffer.toString('base64');
+
+    return base64;
+}
+
+/*
 const base64urlToArrayBuffer = function(base64url) {
     // Step 1: Add padding to the Base64url string if necessary
     const paddedBase64 = base64url + '='.repeat((4 - base64url.length % 4) % 4);
@@ -86,7 +110,7 @@ const arrayBufferToBase64url = function(arrayBuffer) {
         .replace(/=+$/, '');
 
     return base64url;
-}
+}*/
 
 const createFidoInstance = function(params) {
     const fidoInstance = new Fido2Lib({
