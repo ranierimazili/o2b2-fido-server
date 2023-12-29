@@ -8,7 +8,7 @@ const db = new MemoryAdapter();
 router.post('/fido-registration-options', async (req, res) => {
     const response = await postFidoRegistrationOptions(req.body, db);
         
-    res.status(200)
+    res.status(201)
         .type('application/json')
         .send(response);
     
@@ -17,7 +17,7 @@ router.post('/fido-registration-options', async (req, res) => {
 router.post('/fido-registration', async (req, res) => {
     const response = await postFidoRegistration(req.body, db);
         
-    res.status(200)
+    res.status(204)
         .type('application/json')
         .send(response);
     
