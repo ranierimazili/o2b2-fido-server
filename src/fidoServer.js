@@ -43,12 +43,12 @@ export const postFidoRegistration = async function(payload, db) {
     const attestationOpts = db.get(`${payload.enrollmentId}-attestationOpts`);
     //Converte o challenge para ByteArray para possibilitar a validação do attestation
     attestationOpts.challenge = coerceToArrayBuffer(attestationOpts.challenge, "challenge");
-
+    
     try {
         const registrationResult = await fidoInstance.attestationResult(payload.attestationResult, attestationOpts);
-        console.log(registrationResult);
+        console.log("resultado do registro:", registrationResult);
     } catch (e) {
-        console.log(e);
+        console.log("erro no registro: ", e);
     }
     
 }

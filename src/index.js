@@ -19,7 +19,7 @@ const options = {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use('/', routes);
+app.use('/fido-server', routes);
 
 const server = https.createServer(options, app);
 
