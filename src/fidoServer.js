@@ -1,33 +1,4 @@
 import { Fido2Lib } from 'fido2-lib';
-import { coerceToBase64, coerceToBase64Url,coerceToArrayBuffer } from 'fido2-lib/lib/utils.js';
-
-
-/*
-export const createAttestationForEnrollment = function() {
-    
-    //const registrationOptions = await f2l.attestationOptions(); Talvez o attestationOptions tenha que ser enviado tb;
-    const challenge = randomBytes(128);
-
-    const attestationExpectations = {
-        challenge: challenge.toString('base64'),
-        origin: "https://localhost:8443",
-        factor: "either"
-    };
-
-    //save it
-
-    //return it
-    return attestationExpectations;
-}
-
-export const validateAttestationForEnrollment = async function() {
-    //get attestation expectation
-    try {
-        const regResult = await fido2Server.attestationResult(clientAttestationResponse, attestationExpectations); // will throw on error
-    } catch (e) {
-        console.log("erro: validateAttestationForEnrollment", e);
-    }
-}*/
 
 export const postFidoRegistrationOptions = async function(payload, db) {
     const fidoInstance = createFidoInstance(payload);
@@ -41,10 +12,13 @@ export const postFidoRegistrationOptions = async function(payload, db) {
 export const postFidoRegistration = async function(payload, db) {
     const fidoInstance = createFidoInstance(payload);
     const attestationOpts = db.get(`${payload.enrollmentId}-attestationOpts`);
+
     //Converte o challenge para ByteArray para possibilitar a validação do attestation
+    //A documentação dos 3 campos abaixo está em https://webauthn-open-source.github.io/fido2-lib/Fido2Lib.html#attestationResult
     attestationOpts.challenge = base64ToArrayBuffer(attestationOpts.challenge);
     attestationOpts.factor = "either";
-    attestationOpts.origin = "https://uol.com.br";
+    attestationOpts.origin = "https://uol.com.br"; //Substituir por um atributo que deve vir do request (ex: payload.origin)
+
     payload.attestationResult.rawId = base64ToArrayBuffer(payload.attestationResult.rawId);
 
     try {
@@ -114,17 +88,18 @@ const arrayBufferToBase64url = function(arrayBuffer) {
 
 const createFidoInstance = function(params) {
     const fidoInstance = new Fido2Lib({
-        //timeout: 42,
+        //timeout: 42, //qtos segundos o usuario tem pra se autenticar (ex: biometria)
         rpId: params.rp,
         //rpName: "Ranieri",
         //rpIcon: "https://example.com/logo.png",
         challengeSize: 128,
-        attestation: "none", //Verificar
+        attestation: "none", //Verificar - parece que o que faz mais sentido é direct ou enterprise - https://developer.mozilla.org/en-US/docs/Web/API/CredentialsContainer/create#attestation
         cryptoParams: [-7, -257], //ES256 e RS256 (mobile usa es256 e chave usb usa rs256)
         //TODO talvez o melhor seja não definir o parametro abaixo, pois assim o dispositivo do cliente pode decidir o que usar, por exemplo, uma chave que permita NFC no celular
         //authenticatorAttachment: ["ANDROID","IOS"].includes(params.platform) ? 'platform' : 'cross-platform',
-        authenticatorRequireResidentKey: false, //verificar
-        authenticatorUserVerification: "required" //verificar
+        authenticatorRequireResidentKey: false, //verificar valor padrão, o melhor é tirar essa opção pois é deprecated
+        authenticatorUserVerification: "required" //O ideal é sempre ser required para obrigar a validação do usuário para a criação
+        //Documentação de alguns destes campos em https://developer.mozilla.org/en-US/docs/Web/API/CredentialsContainer/create
     });
     return fidoInstance;
 }
