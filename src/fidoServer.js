@@ -65,8 +65,11 @@ export const postFidoSign = async function(payload, db) {
 
     try {
         const authnResult = await fidoInstance.assertionResult(payload.auth, assertionExpectations); // will throw on error
+        
         console.log("sucesso na auth");
+        console.log(authnResult)
         return { "ok":"ok" };
+
     } catch (e) {
         console.log("Erro ao tentar autehtnicar: ", e);
     }
