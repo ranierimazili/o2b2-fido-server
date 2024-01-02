@@ -24,10 +24,22 @@ export const postFidoRegistration = async function(payload, db) {
     try {
         const registrationResult = await fidoInstance.attestationResult(payload.attestationResult, attestationOpts);
         console.log("resultado do registro:", registrationResult);
+
+        //Isso deve ficar em outro método depois
+        const authnOptions = await fidoInstance.assertionOptions();
+        console.log("authnOptions", authnOptions);
     } catch (e) {
         console.log("erro no registro: ", e);
     }
-    
+}
+
+export const postFidoSignOptions = async function(payload, db) {
+    const fidoInstance = createFidoInstance(payload);
+    const attestationOpts = await fidoInstance.attestationOptions();
+    //Converte o challenge para base64 para possibilitar o envio via JSON
+    attestationOpts.challenge = arrayBufferToBase64(attestationOpts.challenge);
+    db.save(`${payload.enrollmentId}-attestationOpts`, attestationOpts);
+    return attestationOpts;
 }
 
 function base64ToArrayBuffer(base64String) {
