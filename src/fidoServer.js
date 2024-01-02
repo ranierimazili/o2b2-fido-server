@@ -58,7 +58,13 @@ export const postFidoSign = async function(payload, db) {
         //prevCounter: 362
     };
     assertionExpectations.challenge = base64ToArrayBuffer(assertionExpectations.challenge);
-    const authnResult = await fidoInstance.assertionResult(clientAssertionResponse, assertionExpectations); // will throw on error
+    try {
+        const authnResult = await fidoInstance.assertionResult(clientAssertionResponse, assertionExpectations); // will throw on error
+        console.log("sucesso na auth");
+        return { "ok":"ok" };
+    } catch (e) {
+        console.log("Erro ao tentar autehtnicar: ", e);
+    }
 }
 
 export const postFidoSignOptions = async function(payload, db) {
