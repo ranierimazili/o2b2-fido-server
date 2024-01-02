@@ -32,7 +32,8 @@ export const postFidoRegistration = async function(payload, db) {
         const response = {
             challenge: arrayBufferToBase64(authnOptions.challenge),
             allowCredentials: [{
-                id: registrationResult.request.id,
+                //id: registrationResult.request.id,
+                id: arrayBufferToBase64(registrationResult.request.rawId),
                 type: registrationResult.request.response.type,
             }]
         }
