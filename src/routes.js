@@ -19,7 +19,7 @@ router.post('/fido-registration', async (req, res) => {
         
     res.status(204)
         .type('application/json')
-        .send(response);
+        .send(JSON.stringify(response));
     
 });
 
