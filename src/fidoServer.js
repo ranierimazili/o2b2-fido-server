@@ -59,6 +59,7 @@ export const postFidoSign = async function(payload, db) {
         //prevCounter: 362
     };
     assertionExpectations.challenge = base64ToArrayBuffer(assertionExpectations.challenge);
+    assertionExpectations.userHandle = null;
     payload.auth.rawId = base64ToArrayBuffer(payload.auth.rawId);
     console.log(payload.auth)
 
