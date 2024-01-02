@@ -58,8 +58,11 @@ export const postFidoSign = async function(payload, db) {
         //prevCounter: 362
     };
     assertionExpectations.challenge = base64ToArrayBuffer(assertionExpectations.challenge);
+    payload.auth.rawId = base64ToArrayBuffer(payload.auth.rawId);
+    console.log(payload.auth)
+
     try {
-        const authnResult = await fidoInstance.assertionResult(clientAssertionResponse, assertionExpectations); // will throw on error
+        const authnResult = await fidoInstance.assertionResult(payload.auth, assertionExpectations); // will throw on error
         console.log("sucesso na auth");
         return { "ok":"ok" };
     } catch (e) {
