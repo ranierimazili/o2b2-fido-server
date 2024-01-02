@@ -32,18 +32,33 @@ export const postFidoRegistration = async function(payload, db) {
         const response = {
             challenge: arrayBufferToBase64(authnOptions.challenge),
             allowCredentials: [{
-                //id: registrationResult.request.id,
                 id: arrayBufferToBase64(registrationResult.request.rawId),
                 type: registrationResult.request.response.type,
             }]
         }
 
+        
+        response.publicKey = registrationResult.authnrData.get("credentialPublicKeyPem");
         console.log("response para sign", response);
+        db.save("login", response);
         return response;
 
     } catch (e) {
         console.log("erro no registro: ", e);
     }
+}
+
+export const postFidoSign = async function(payload, db) {
+    const fidoInstance = createFidoInstance(payload);
+    const assertion = db.get("login");
+    const assertionExpectations = {...assertion,
+        origin: "https://fido2-client.ranieri.dev.br", //Substituir por um atributo que deve vir do request (ex: payload.origin)
+        factor: "either"
+        
+        //prevCounter: 362
+    };
+    assertionExpectations.challenge = base64ToArrayBuffer(assertionExpectations.challenge);
+    const authnResult = await fidoInstance.assertionResult(clientAssertionResponse, assertionExpectations); // will throw on error
 }
 
 export const postFidoSignOptions = async function(payload, db) {
