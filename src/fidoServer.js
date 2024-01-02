@@ -17,7 +17,7 @@ export const postFidoRegistration = async function(payload, db) {
     //A documentação dos 3 campos abaixo está em https://webauthn-open-source.github.io/fido2-lib/Fido2Lib.html#attestationResult
     attestationOpts.challenge = base64ToArrayBuffer(attestationOpts.challenge);
     attestationOpts.factor = "either";
-    attestationOpts.origin = "http://fido2-client.ranieri.dev.br"; //Substituir por um atributo que deve vir do request (ex: payload.origin)
+    attestationOpts.origin = "https://fido2-client.ranieri.dev.br"; //Substituir por um atributo que deve vir do request (ex: payload.origin)
 
     payload.attestationResult.rawId = base64ToArrayBuffer(payload.attestationResult.rawId);
 
