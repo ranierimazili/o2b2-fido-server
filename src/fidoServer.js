@@ -147,7 +147,7 @@ const createFidoInstance = function(params) {
         //rpName: "Ranieri",
         //rpIcon: "https://example.com/logo.png",
         challengeSize: 128,
-        attestation: "none", //Verificar - parece que o que faz mais sentido é direct ou enterprise - https://developer.mozilla.org/en-US/docs/Web/API/CredentialsContainer/create#attestation
+        attestation: "direct", //Verificar - parece que o que faz mais sentido é direct ou enterprise - https://developer.mozilla.org/en-US/docs/Web/API/CredentialsContainer/create#attestation
         cryptoParams: [-7, -257], //ES256 e RS256 (mobile usa es256 e chave usb usa rs256)
         //TODO talvez o melhor seja não definir o parametro abaixo, pois assim o dispositivo do cliente pode decidir o que usar, por exemplo, uma chave que permita NFC no celular
         //authenticatorAttachment: ["ANDROID","IOS"].includes(params.platform) ? 'platform' : 'cross-platform',

@@ -23,6 +23,15 @@ router.post('/fido-registration', async (req, res) => {
     
 });
 
+router.post('/fido-sign-options', async (req, res) => {
+    const response = await postFidoSign(req.body, db);
+        
+    res.status(200)
+        .type('application/json')
+        .send(JSON.stringify(response));
+    
+});
+
 router.post('/fido-sign', async (req, res) => {
     const response = await postFidoSign(req.body, db);
         
