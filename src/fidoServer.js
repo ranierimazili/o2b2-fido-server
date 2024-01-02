@@ -39,6 +39,7 @@ export const postFidoRegistration = async function(payload, db) {
 
         
         response.publicKey = registrationResult.authnrData.get("credentialPublicKeyPem");
+        response.prevCounter = registrationResult.authnrData.get("counter");
         console.log("response para sign", response);
         db.save("login", response);
         return response;
