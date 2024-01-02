@@ -28,6 +28,18 @@ export const postFidoRegistration = async function(payload, db) {
         //Isso deve ficar em outro método depois
         const authnOptions = await fidoInstance.assertionOptions();
         console.log("authnOptions", authnOptions);
+
+        const response = {
+            challenge: arrayBufferToBase64(authnOptions.challenge),
+            allowCredentials: [{
+                id: registrationResult.result.id,
+                type: registrationResult.result.response.type,
+            }]
+        }
+
+        console.log("response para sign", response);
+        return response;
+
     } catch (e) {
         console.log("erro no registro: ", e);
     }
