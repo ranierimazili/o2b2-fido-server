@@ -17,7 +17,7 @@ router.post('/fido-registration-options', async (req, res) => {
 router.post('/fido-registration', async (req, res) => {
     const response = await postFidoRegistration(req.body, db);
         
-    res.status(204)
+    res.status(200)
         .type('application/json')
         .send(JSON.stringify(response));
     
