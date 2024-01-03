@@ -156,12 +156,15 @@ const createFidoInstance = function(params) {
         cryptoParams: [-7, -257],
         //Torna obrigatório a validação do cliente tanto para registro do dispositivo quanto para autenticação
         authenticatorUserVerification: "required", //O ideal é sempre ser required para obrigar a validação do usuário para a criação
-        authenticatorSelection: {
+        authenticatorAttachment: ['ANDROID','IOS'].includes(params.platform) ? 'platform' : 'cross-platform',
+        authenticatorRequireResidentKey: true,
+        //authenticatorUserVerification: "required"
+        /*authenticatorSelection: {
             residentKey: "preferred",
             requireResidentKey: false,
             userVerification: "required",
             authenticatorAttachment: ['ANDROID','IOS'].includes(params.platform) ? 'platform' : 'cross-platform'
-        }
+        }*/
     });
 
     return fidoInstance;
