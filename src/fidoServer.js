@@ -1,6 +1,9 @@
 import { Fido2Lib } from 'fido2-lib';
 
+
+//Tudo funcionando... amanhã é hora de organizar o código pra ficar bonito!!!
 export const postFidoRegistrationOptions = async function(payload, db) {
+    console.log("payload recebido", payload);
     const fidoInstance = createFidoInstance(payload);
     const attestationOpts = await fidoInstance.attestationOptions();
     //Converte o challenge para base64 para possibilitar o envio via JSON
@@ -141,19 +144,24 @@ const arrayBufferToBase64url = function(arrayBuffer) {
 }*/
 
 const createFidoInstance = function(params) {
+    //A documentação dos parâmetros possíveis pode ser encontrada em https://webauthn-open-source.github.io/fido2-lib/Fido2Lib.html
+
     const fidoInstance = new Fido2Lib({
-        //timeout: 42, //qtos segundos o usuario tem pra se autenticar (ex: biometria)
         rpId: params.rp,
         //rpName: "Ranieri",
-        //rpIcon: "https://example.com/logo.png",
         challengeSize: 128,
-        attestation: "direct", //Verificar - parece que o que faz mais sentido é direct ou enterprise - https://developer.mozilla.org/en-US/docs/Web/API/CredentialsContainer/create#attestation
-        cryptoParams: [-7, -257], //ES256 e RS256 (mobile usa es256 e chave usb usa rs256)
-        //TODO talvez o melhor seja não definir o parametro abaixo, pois assim o dispositivo do cliente pode decidir o que usar, por exemplo, uma chave que permita NFC no celular
-        //authenticatorAttachment: ["ANDROID","IOS"].includes(params.platform) ? 'platform' : 'cross-platform',
-        authenticatorRequireResidentKey: false, //verificar valor padrão, o melhor é tirar essa opção pois é deprecated
-        authenticatorUserVerification: "required" //O ideal é sempre ser required para obrigar a validação do usuário para a criação
-        //Documentação de alguns destes campos em https://developer.mozilla.org/en-US/docs/Web/API/CredentialsContainer/create
+        attestation: "direct",
+        //-7: Certificados do tipo ES256 - Geralmente utilizando por mobiles
+        //-257: Certificados do tipo RS256 - Geralmente utilizado por chaves externas (usb)
+        cryptoParams: [-7, -257],
+        //Torna obrigatório a validação do cliente tanto para registro do dispositivo quanto para autenticação
+        authenticatorUserVerification: "required", //O ideal é sempre ser required para obrigar a validação do usuário para a criação
+        authenticatorSelection: {
+            residentKey: "preferred",
+            requireResidentKey: false,
+            userVerification: "required"
+        }
     });
+
     return fidoInstance;
 }
