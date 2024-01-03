@@ -159,7 +159,8 @@ const createFidoInstance = function(params) {
         authenticatorSelection: {
             residentKey: "preferred",
             requireResidentKey: false,
-            userVerification: "required"
+            userVerification: "required",
+            authenticatorAttachment: ['ANDROID','IOS'].includes(params.platform.includes) ? 'platform' : 'cross-platform'
         }
     });
 
