@@ -101,19 +101,19 @@ export const postFidoSignOptions = async function(payload, db) {
         const response = {
             challenge: arrayBufferToBase64(authnOptions.challenge),
             allowCredentials: [{
-                id: fidoObject.attestation.id,
-                type: fidoObject.attestation.type
+                id: fidoObject.registration.attestationResult.id,
+                type: fidoObject.registration.attestationResult.type
             }]
         }
 
         //Salva o objeto de assertion para ser comparado no momento do postFidoSign
         fidoObject.assertion = {
             ...response,
-            prevCounter: fidoObject.attestation.prevCounter,
-            publicKey: fidoObject.attestation.publicKey,
+            prevCounter: fidoObject.registration.attestationResult.prevCounter,
+            publicKey: fidoObject.registration.attestationResult.publicKey,
             factor: "either",
-            origin: "https://fido2-client.ranieri.dev.br", //Substituir por um atributo que deve vir do request ou do primeiro registration
-            userHandle: null
+            origin: fidoObject.registration.origin,
+            userHandle: null //depois colocar o user.id para ver o que acontece
         }
         db.saveFidoObject(payload.id, fidoObject);
         return response;
