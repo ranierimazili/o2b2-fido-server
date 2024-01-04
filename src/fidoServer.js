@@ -1,32 +1,71 @@
 import { Fido2Lib } from 'fido2-lib';
+import randomstring from 'randomstring';
 
-
-//Tudo funcionando... amanhã é hora de organizar o código pra ficar bonito!!!
 export const postFidoRegistrationOptions = async function(payload, db) {
-    console.log("payload recebido", payload);
-    const fidoInstance = createFidoInstance(payload);
-    const attestationOpts = await fidoInstance.attestationOptions();
-    //Converte o challenge para base64 para possibilitar o envio via JSON
-    attestationOpts.challenge = arrayBufferToBase64(attestationOpts.challenge);
-    db.save(`${payload.enrollmentId}-attestationOpts`, attestationOpts);
-    return attestationOpts;
+    try {
+        const currentDate = new Date();
+        
+        const fidoObject = {
+            registration: {
+                rp: payload.rp,
+                platform: payload.platform,
+                origin: payload.origin,
+                date: currentDate.toISOString()
+            }
+        }
+        
+        const fidoInstance = createFidoInstance(fidoObject.registration.rp, fidoObject.registration.platform);
+        
+        const attestationOpts = await fidoInstance.attestationOptions();
+        //Converte o challenge para base64 para possibilitar o envio via JSON
+        attestationOpts.challenge = arrayBufferToBase64(attestationOpts.challenge);
+        const userId = randomstring.generate({length: 32, charset: 'alphanumeric'});
+        attestationOpts.user = {
+            id: userId
+        }
+
+        //Complementa o objeto de attestation e salva no DB para validação futura quando o postFidoRegistration for chamado
+        fidoObject.registration.attestationExpectation = {
+            ...attestationOpts,
+            factor: 'either',
+            origin: fidoObject.registration.origin
+        };
+        await db.saveFidoObject(payload.id, fidoObject);
+        console.log("DEBUG - fidoObject: ", JSON.stringify(fidoObject));
+        return attestationOpts;
+    } catch (e) {
+        console.log(e);
+        return null;
+    }
 }
 
 export const postFidoRegistration = async function(payload, db) {
-    const fidoInstance = createFidoInstance(payload);
-    const attestationOpts = db.get(`${payload.enrollmentId}-attestationOpts`);
-
-    //Converte o challenge para ByteArray para possibilitar a validação do attestation
-    //A documentação dos 3 campos abaixo está em https://webauthn-open-source.github.io/fido2-lib/Fido2Lib.html#attestationResult
-    attestationOpts.challenge = base64ToArrayBuffer(attestationOpts.challenge);
-    attestationOpts.factor = "either";
-    attestationOpts.origin = "https://fido2-client.ranieri.dev.br"; //Substituir por um atributo que deve vir do request (ex: payload.origin)
-
-    payload.attestationResult.rawId = base64ToArrayBuffer(payload.attestationResult.rawId);
-
     try {
-        const registrationResult = await fidoInstance.attestationResult(payload.attestationResult, attestationOpts);
+        let fidoObject = await db.getFidoObjectById(payload.id);
+        const fidoInstance = createFidoInstance(fidoObject.registration.rp, fidoObject.registration.platform);
+        
+        //Converte o challenge e o rawId de volta para ArrayBuffer para conseguir realizar o attestation
+        const attestationExpectation = {...fidoObject.registration.attestationExpectation};
+        attestationExpectation.challenge = base64ToArrayBuffer(attestationExpectation.challenge);
+        payload.attestationResult.rawId = base64ToArrayBuffer(payload.attestationResult.rawId);
+    
+        //Valida o registro do cliente
+        const registrationResult = await fidoInstance.attestationResult(payload.attestationResult, attestationExpectation);
+
+        //Salva os dados do registro para realização de futuras autenticações
+        const currentDate = new Date();
+        fidoObject.registration.attestationResult = {
+            publicKey: registrationResult.authnrData.get("credentialPublicKeyPem"),
+            prevCounter: registrationResult.authnrData.get("counter"),
+            id: arrayBufferToBase64(registrationResult.request.rawId),
+            type: registrationResult.request.response.type,
+            date: currentDate.toISOString()
+        };
         console.log("resultado do registro:", registrationResult);
+        await db.saveFidoObject(payload.id, fidoObject);
+        console.log("DEBUG - fidoObject: ", JSON.stringify(fidoObject));
+
+        return;
 
         //Isso deve ficar em outro método depois
         const authnOptions = await fidoInstance.assertionOptions();
@@ -52,8 +91,67 @@ export const postFidoRegistration = async function(payload, db) {
     }
 }
 
+
+
+export const postFidoSignOptions = async function(payload, db) {
+    try {
+        let fidoObject = db.getFidoObjectById(payload.id);
+        const fidoInstance = createFidoInstance(fidoObject);
+        
+        //Cria o objeto de assertion a ser retornado para RP
+        const authnOptions = await fidoInstance.assertionOptions();
+        const response = {
+            challenge: arrayBufferToBase64(authnOptions.challenge),
+            allowCredentials: [{
+                id: fidoObject.attestation.id,
+                type: fidoObject.attestation.type
+            }]
+        }
+
+        //Salva o objeto de assertion para ser comparado no momento do postFidoSign
+        fidoObject.assertion = {
+            ...response,
+            prevCounter: fidoObject.attestation.prevCounter,
+            publicKey: fidoObject.attestation.publicKey,
+            factor: "either",
+            origin: "https://fido2-client.ranieri.dev.br", //Substituir por um atributo que deve vir do request ou do primeiro registration
+            userHandle: null
+        }
+        db.saveFidoObject(payload.id, fidoObject);
+        return response;
+    } catch(e) {
+        console.log(e);
+        return null;
+
+    }
+
+    /*const fidoInstance = createFidoInstance(payload);
+    const attestationOpts = await fidoInstance.attestationOptions();
+    //Converte o challenge para base64 para possibilitar o envio via JSON
+    attestationOpts.challenge = arrayBufferToBase64(attestationOpts.challenge);
+    db.save(`${payload.enrollmentId}-attestationOpts`, attestationOpts);
+    return attestationOpts;*/
+}
+
 export const postFidoSign = async function(payload, db) {
-    const fidoInstance = createFidoInstance(payload);
+    try {
+        let fidoObject = db.getFidoObjectById(payload.id);
+        const fidoInstance = createFidoInstance(fidoObject);
+        
+        const assertionExpectations = {...fidoObject.assertion};
+        assertionExpectations.challenge = base64ToArrayBuffer(assertionExpectations.challenge);
+
+        payload.assertion.rawId = base64ToArrayBuffer(payload.assertion.rawId);
+
+        const authnResult = await fidoInstance.assertionResult(payload.assertion, assertionExpectations);
+        console.log("sucesso na auth");
+        console.log(authnResult)
+        return { "ok":"ok" }; 
+    } catch(e) {
+        console.log(e);
+    }
+    
+    /*const fidoInstance = createFidoInstance(payload);
     const assertion = db.get("login");
     const assertionExpectations = {...assertion,
         origin: "https://fido2-client.ranieri.dev.br", //Substituir por um atributo que deve vir do request (ex: payload.origin)
@@ -64,9 +162,9 @@ export const postFidoSign = async function(payload, db) {
     assertionExpectations.challenge = base64ToArrayBuffer(assertionExpectations.challenge);
     assertionExpectations.userHandle = null;
     payload.auth.rawId = base64ToArrayBuffer(payload.auth.rawId);
-    console.log(payload.auth)
+    console.log(payload.auth)*/
 
-    try {
+    /*try {
         const authnResult = await fidoInstance.assertionResult(payload.auth, assertionExpectations); // will throw on error
         
         console.log("sucesso na auth");
@@ -75,16 +173,7 @@ export const postFidoSign = async function(payload, db) {
 
     } catch (e) {
         console.log("Erro ao tentar autehtnicar: ", e);
-    }
-}
-
-export const postFidoSignOptions = async function(payload, db) {
-    const fidoInstance = createFidoInstance(payload);
-    const attestationOpts = await fidoInstance.attestationOptions();
-    //Converte o challenge para base64 para possibilitar o envio via JSON
-    attestationOpts.challenge = arrayBufferToBase64(attestationOpts.challenge);
-    db.save(`${payload.enrollmentId}-attestationOpts`, attestationOpts);
-    return attestationOpts;
+    }*/
 }
 
 function base64ToArrayBuffer(base64String) {
@@ -143,28 +232,19 @@ const arrayBufferToBase64url = function(arrayBuffer) {
     return base64url;
 }*/
 
-const createFidoInstance = function(params) {
+const createFidoInstance = function(rp, platform) {
     //A documentação dos parâmetros possíveis pode ser encontrada em https://webauthn-open-source.github.io/fido2-lib/Fido2Lib.html
-
     const fidoInstance = new Fido2Lib({
-        rpId: params.rp,
-        //rpName: "Ranieri",
+        rpId: rp.id,
+        rpName: rp.name,
         challengeSize: 128,
         attestation: "direct",
         //-7: Certificados do tipo ES256 - Geralmente utilizando por mobiles
         //-257: Certificados do tipo RS256 - Geralmente utilizado por chaves externas (usb)
         cryptoParams: [-7, -257],
-        //Torna obrigatório a validação do cliente tanto para registro do dispositivo quanto para autenticação
-        authenticatorUserVerification: "required", //O ideal é sempre ser required para obrigar a validação do usuário para a criação
-        authenticatorAttachment: ['ANDROID','IOS'].includes(params.platform) ? 'platform' : 'cross-platform',
+        authenticatorAttachment: ['ANDROID','IOS'].includes(platform) ? 'platform' : 'cross-platform',
         authenticatorRequireResidentKey: true,
-        //authenticatorUserVerification: "required"
-        /*authenticatorSelection: {
-            residentKey: "preferred",
-            requireResidentKey: false,
-            userVerification: "required",
-            authenticatorAttachment: ['ANDROID','IOS'].includes(params.platform) ? 'platform' : 'cross-platform'
-        }*/
+        authenticatorUserVerification: "required"
     });
 
     return fidoInstance;

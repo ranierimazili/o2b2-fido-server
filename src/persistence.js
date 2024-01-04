@@ -3,12 +3,12 @@ import QuickLRU from 'quick-lru';
 let storage = new QuickLRU({ maxSize: 1000 });
 
 class MemoryAdapter {
-    save(id, value) {
-        storage.set(id, value);
+    async getFidoObjectById(id) {
+        return storage.get(id);
     }
 
-    get(id) {
-        return storage.get(id);
+    async saveFidoObject(id, value) {
+        storage.set(id, value);
     }
 }
 
