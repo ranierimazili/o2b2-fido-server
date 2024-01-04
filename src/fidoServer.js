@@ -91,12 +91,10 @@ export const postFidoRegistration = async function(payload, db) {
     }
 }
 
-
-
 export const postFidoSignOptions = async function(payload, db) {
     try {
         let fidoObject = db.getFidoObjectById(payload.id);
-        const fidoInstance = createFidoInstance(fidoObject);
+        const fidoInstance = createFidoInstance(fidoObject.registration.rp, payload.platform);
         
         //Cria o objeto de assertion a ser retornado para RP
         const authnOptions = await fidoInstance.assertionOptions();

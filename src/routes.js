@@ -1,5 +1,5 @@
 import express from 'express';
-import { postFidoRegistration, postFidoRegistrationOptions, postFidoSign } from './fidoServer.js';
+import { postFidoRegistration, postFidoRegistrationOptions, postFidoSign, postFidoSignOptions } from './fidoServer.js';
 import MemoryAdapter from './persistence.js';
 
 const router = express.Router();
@@ -24,7 +24,7 @@ router.post('/fido-registration', async (req, res) => {
 });
 
 router.post('/fido-sign-options', async (req, res) => {
-    const response = await postFidoSign(req.body, db);
+    const response = await postFidoSignOptions(req.body, db);
         
     res.status(200)
         .type('application/json')
