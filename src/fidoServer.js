@@ -134,7 +134,7 @@ export const postFidoSignOptions = async function(payload, db) {
 
 export const postFidoSign = async function(payload, db) {
     try {
-        let fidoObject = db.getFidoObjectById(payload.id);
+        let fidoObject = await db.getFidoObjectById(payload.id);
         const fidoInstance = createFidoInstance(fidoObject.registration.rp, fidoObject.assertion.platform);
         
         const assertionExpectations = {...fidoObject.assertion};
