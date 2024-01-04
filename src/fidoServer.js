@@ -113,7 +113,8 @@ export const postFidoSignOptions = async function(payload, db) {
             publicKey: fidoObject.registration.attestationResult.publicKey,
             factor: "either",
             origin: fidoObject.registration.origin,
-            userHandle: null //depois colocar o user.id para ver o que acontece
+            userHandle: null, //depois colocar o user.id para ver o que acontece
+            platform: payload.platform
         }
         db.saveFidoObject(payload.id, fidoObject);
         return response;
@@ -134,7 +135,7 @@ export const postFidoSignOptions = async function(payload, db) {
 export const postFidoSign = async function(payload, db) {
     try {
         let fidoObject = db.getFidoObjectById(payload.id);
-        const fidoInstance = createFidoInstance(fidoObject);
+        const fidoInstance = createFidoInstance(fidoObject.registration.rp, fidoObject.assertion.platform);
         
         const assertionExpectations = {...fidoObject.assertion};
         assertionExpectations.challenge = base64ToArrayBuffer(assertionExpectations.challenge);
