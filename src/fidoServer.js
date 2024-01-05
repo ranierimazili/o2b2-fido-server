@@ -46,7 +46,7 @@ export const postFidoRegistration = async function(payload, db) {
         
         //Converte o challenge e o rawId de volta para ArrayBuffer para conseguir realizar o attestation
         const attestationExpectation = {...fidoObject.registration.attestationExpectation};
-        attestationExpectation.challenge = base64ToArrayBuffer(attestationExpectation.challenge);
+        //attestationExpectation.challenge = base64ToArrayBuffer(attestationExpectation.challenge); //Não converter de volta ou converter para base64url neste momento
         payload.attestationResult.rawId = base64ToArrayBuffer(payload.attestationResult.rawId);
     
         //Valida o registro do cliente
@@ -66,26 +66,6 @@ export const postFidoRegistration = async function(payload, db) {
         console.log("DEBUG - fidoObject: ", JSON.stringify(fidoObject));
 
         return;
-
-        //Isso deve ficar em outro método depois
-        const authnOptions = await fidoInstance.assertionOptions();
-        console.log("authnOptions", authnOptions);
-
-        const response = {
-            challenge: arrayBufferToBase64(authnOptions.challenge),
-            allowCredentials: [{
-                id: arrayBufferToBase64(registrationResult.request.rawId),
-                type: registrationResult.request.response.type,
-            }]
-        }
-
-        
-        response.publicKey = registrationResult.authnrData.get("credentialPublicKeyPem");
-        response.prevCounter = registrationResult.authnrData.get("counter");
-        console.log("response para sign", response);
-        db.save("login", response);
-        return response;
-
     } catch (e) {
         console.log("erro no registro: ", e);
     }
@@ -123,13 +103,6 @@ export const postFidoSignOptions = async function(payload, db) {
         return null;
 
     }
-
-    /*const fidoInstance = createFidoInstance(payload);
-    const attestationOpts = await fidoInstance.attestationOptions();
-    //Converte o challenge para base64 para possibilitar o envio via JSON
-    attestationOpts.challenge = arrayBufferToBase64(attestationOpts.challenge);
-    db.save(`${payload.enrollmentId}-attestationOpts`, attestationOpts);
-    return attestationOpts;*/
 }
 
 export const postFidoSign = async function(payload, db) {
@@ -149,30 +122,6 @@ export const postFidoSign = async function(payload, db) {
     } catch(e) {
         console.log(e);
     }
-    
-    /*const fidoInstance = createFidoInstance(payload);
-    const assertion = db.get("login");
-    const assertionExpectations = {...assertion,
-        origin: "https://fido2-client.ranieri.dev.br", //Substituir por um atributo que deve vir do request (ex: payload.origin)
-        factor: "either"
-        
-        //prevCounter: 362
-    };
-    assertionExpectations.challenge = base64ToArrayBuffer(assertionExpectations.challenge);
-    assertionExpectations.userHandle = null;
-    payload.auth.rawId = base64ToArrayBuffer(payload.auth.rawId);
-    console.log(payload.auth)*/
-
-    /*try {
-        const authnResult = await fidoInstance.assertionResult(payload.auth, assertionExpectations); // will throw on error
-        
-        console.log("sucesso na auth");
-        console.log(authnResult)
-        return { "ok":"ok" };
-
-    } catch (e) {
-        console.log("Erro ao tentar autehtnicar: ", e);
-    }*/
 }
 
 function base64ToArrayBuffer(base64String) {
