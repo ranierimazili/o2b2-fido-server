@@ -48,6 +48,9 @@ export const postFidoRegistration = async function(payload, db) {
         const attestationExpectation = {...fidoObject.registration.attestationExpectation};
         //attestationExpectation.challenge = base64ToArrayBuffer(attestationExpectation.challenge); //Não converter de volta ou converter para base64url neste momento
         payload.attestationResult.rawId = base64ToArrayBuffer(payload.attestationResult.rawId);
+        
+        //Teste de results
+        payload.attestationResult.transports = ['hybrid','internal'];
     
         //Valida o registro do cliente
         const registrationResult = await fidoInstance.attestationResult(payload.attestationResult, attestationExpectation);
