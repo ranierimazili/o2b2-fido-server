@@ -1,0 +1,328 @@
+openapi: 3.0.3
+info:
+  title: o2b2-fido-server
+  description: Documentação das API's internas do o2b2-fido-server que possibilitam o vínculo (attestation) do dispositivo (mobile, usb-key) do cliente e autenticação (assertion) com o mesmo
+  version: 1.0.0
+paths:
+  /fido-server/fido-registration-options:
+    post:
+      description: Retorna os dados para criação das chaves FIDO no dispositivo do cliente
+      summary: Retorna os dados para criação das chaves FIDO no dispositivo do cliente
+      requestBody:
+        content:
+          application/json:
+            schema: 
+              $ref: '#/components/schemas/RegistrationOptionsRequest'
+      responses:
+        '201':
+          description: Dados para realização do vínculo (attestation) no dispositivo do cliente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationOptionsResponseSuccess'
+        '400':
+          description: Erro na criação dos dados para realização do vínculo no dispositivo do cliente
+          content:
+            plain/text:
+              schema:
+                type: string
+                example: 'Campo obrigatório não enviado: enrollmentId'
+  /fido-server/fido-registration:
+    post:
+      description: Efetua o registro do vínculo de dispositivo
+      summary: Efetua o registro do vínculo de dispositivo
+      requestBody:
+        content:
+          application/json:
+            schema: 
+              $ref: '#/components/schemas/RegistrationRequest'
+      responses:
+        '201':
+          description: Vínculo (attestation) do dispositivo do cliente realizado com sucesso
+        '400':
+          description: Erro na criação do vínculo no dispositivo do cliente
+          content:
+            plain/text:
+              schema:
+                type: string
+                example: 'Campo obrigatório não enviado: enrollmentId'
+  /fido-server/fido-sign-options:
+    post:
+      description: Retorna os dados para autenticação do dispositivo do cliente utilizando as chaves FIDO
+      summary: Retorna os dados para autenticação do dispositivo do cliente utilizando as chaves FIDO
+      requestBody:
+        content:
+          application/json:
+            schema: 
+              $ref: '#/components/schemas/SignOptionsRequest'
+      responses:
+        '201':
+          description: Dados para realização da autenticação do dispositivo do cliente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignOptionsResponseSuccess'
+        '400':
+          description: Erro na criação dos dados para realização da autenticação do dispositivo do cliente
+          content:
+            plain/text:
+              schema:
+                type: string
+                example: 'Campo obrigatório não enviado: enrollmentId'
+  /fido-server/fido-sign:
+    post:
+      description: Efetua a autenticação do dispositivo do cliente
+      summary: Efetua a autenticação do dispositivo do cliente
+      requestBody:
+        content:
+          application/json:
+            schema: 
+              $ref: '#/components/schemas/SignRequest'
+      responses:
+        '200':
+          description: Autenticação (assertion) do dispositivo do cliente realizado com sucesso
+        '400':
+          description: Erro na autenticação do dispositivo do cliente
+          content:
+            plain/text:
+              schema:
+                type: string
+                example: 'Campo obrigatório não enviado: enrollmentId'
+components:
+  schemas:
+    RegistrationOptionsRequest:
+      type: object
+      properties:
+        enrollmentId:
+          type: string
+          description: ID do enrollment. Este ID será utilizado como chave para posteriormente realizar a busca da chave FIDO do dispositivo do cliente.
+          example: urn:ranibank:c5effa98-b3c3-4210-b816-e7a7e915dd2e
+        rpId:
+          type: string
+          description: CN presente no certificado de transporte
+          example: https://ranieri.dev.br
+        rpName:
+          type: string
+          description: Nome da RP. Deve ser o valor do atributo software_client_name presente no SSA utilizado no momento do DCR/DCM.
+          example: RaniBank
+        platform:
+          type: string
+          description: Plataforma utilizada pelo cliente no momento do vínculo do dispositivo
+          enum:
+            - ANDROID
+            - BROWSER
+            - IOS
+          example: BROWSER
+      required:
+        - enrollmentId
+        - rpId
+        - rpName
+        - platform
+    RegistrationOptionsResponseSuccess:
+      type: object
+      properties:
+        rp:
+          type: object
+          properties:
+            name:
+              type: string
+              description: Nome da RP. Deve retornar o mesmo valor enviado na requisição no atributo rpName.
+              example: RANIBANK S.A
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+              description: ID gerado randomicamente para o usuário
+              example: ZSzHbCqQKeTHWWKI7l4cMJIhsz8mHmrP
+        challenge:
+          type: string
+          description: Challenge em formato base64url
+          example: JXQnHZ1p1EWzWR2kxNqLT1spGFa0iu6VNc3HWUJe_wn831QI0NF0HK02lTCmHZ3jOYxE9VXu5TMN6pkmP6hJXEXuXUuHIXvLprOO-xiIyz22DHIigJ9QqVZm5nEZg6zP6sGXbx0JBfzp3aipDXp454lQhkaZ_1vG9HB9opaQwSo
+        pubKeyCredParams:
+          type: array
+          items:
+            $ref: '#/components/schemas/PubKeyCredParam'
+          example:
+            - type: public-key
+              alg: -7
+            - type: public-key
+              alg: -257
+        timeout:
+          type: integer
+          description: Tempo limite para a resposta, em milissegundos
+          example: 60000
+        attestation:
+          type: string
+          description: Tipo de atestação requerida
+          example: direct
+        authenticatorSelection:
+          type: object
+          properties:
+            authenticatorAttachment:
+              type: string
+              description: Modo de anexação do autenticador
+              example: cross-platform
+            requireResidentKey:
+              type: string
+              description: Indica se é necessária uma chave residente
+              example: true
+            userVerification:
+              type: string
+              description: Método de verificação do usuário requerido
+              example: required
+    RegistrationRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID da chave criada no dispositivo do cliente em formato base64url
+          example: w8nE3InSNsXjpTxeAiHyNA
+        rawId:
+          type: string
+          description: ID da chave criada no dispositivo do cliente em formato base64url
+          example: w8nE3InSNsXjpTxeAiHyNA
+        response:
+          type: object
+          properties: 
+            attestationObject:
+              type: string
+              description: attestation assinado pelo dispositivo do cliente
+              example: o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YViUSZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2NdAAAAAOqbjWZNAR0hPOS2tIy1ddQAEMPJxNyJ0jbF46U8XgIh8jSlAQIDJiABIVggfHKO_ZeFphjfYkngfmWAsDuca-e3fc9YfM8OKlCS4cciWCCyeC1inmxSs5EmBAlVpdwKDZDkYksqe_ZOFN-uhdpNDQ
+            clientDataJSON:
+              type: string
+              description: dados do cliente assinado pelo dispositivo
+              example: eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoidVl2VDRHRllkbnJsTjJnNzZHQkFjNXZObW9lc19tU2ZZSGdGT3REUldGX25qSHNucU9teHg4aElKVUJlT19Dd04xb0FzNUloWXpPTW1COTB1aW82TkFybGJFQUY2SE1BUGtRSVRuZnFBeEhnNGR0U1RSRElmTUstNVZHZWpBZENyVmVWb3JqUzA1OGVyOXNQYm0zRFNOeTAtOXNfRjVKc2NNalFUNHhfWG5jIiwib3JpZ2luIjoiaHR0cHM6Ly9sb2NhbGhvc3Q6NDEwMCIsImNyb3NzT3JpZ2luIjpmYWxzZX0
+            type:
+              type: string
+              description: tipo de chave utilizado para assinatura dos dados
+              example: public-key
+          required:
+            - attestationObject
+            - clientDataJSON
+            - type
+        enrollmentId:
+          type: string
+          description: ID do enrollment. Este ID será utilizado como chave para posteriormente realizar a busca da chave FIDO do dispositivo do cliente.
+          example: urn:ranibank:c5effa98-b3c3-4210-b816-e7a7e915dd2e
+      required:
+        - id
+        - rawId
+        - response
+        - enrollmentId
+    SignOptionsRequest:
+      type: object
+      properties:
+        enrollmentId:
+          type: string
+          description: ID do enrollment. Este ID será utilizado como chave para posteriormente realizar a busca da chave FIDO do dispositivo do cliente.
+          example: urn:ranibank:c5effa98-b3c3-4210-b816-e7a7e915dd2e
+        rpId:
+          type: string
+          description: CN presente no certificado de transporte
+          example: https://ranieri.dev.br
+        rpName:
+          type: string
+          description: Nome da RP. Deve ser o valor do atributo software_client_name presente no SSA utilizado no momento do DCR/DCM.
+          example: RaniBank
+        platform:
+          type: string
+          description: Plataforma utilizada pelo cliente no momento do vínculo do dispositivo
+          enum:
+            - ANDROID
+            - BROWSER
+            - IOS
+          example: BROWSER
+      required:
+        - enrollmentId
+        - rpId
+        - rpName
+        - platform
+    SignOptionsResponseSuccess:
+      type: object
+      properties:
+        challenge:
+          type: string
+          description: Challenge em formato base64url
+          example: JXQnHZ1p1EWzWR2kxNqLT1spGFa0iu6VNc3HWUJe_wn831QI0NF0HK02lTCmHZ3jOYxE9VXu5TMN6pkmP6hJXEXuXUuHIXvLprOO-xiIyz22DHIigJ9QqVZm5nEZg6zP6sGXbx0JBfzp3aipDXp454lQhkaZ_1vG9HB9opaQwSo
+        allowCredentials:
+          type: array
+          items:
+            $ref: '#/components/schemas/AllowedCredential'
+          example:
+            - id: YKWRMTNAkQLxT0CnkIpiyg
+              type: public-key
+    SignRequest:
+      type: object
+      properties:
+        assertion:
+          type: object
+          properties:
+            id:
+              type: string
+              description: ID da chave criada no dispositivo do cliente em formato base64url
+              example: w8nE3InSNsXjpTxeAiHyNA
+            rawId:
+              type: string
+              description: ID da chave criada no dispositivo do cliente em formato base64url
+              example: w8nE3InSNsXjpTxeAiHyNA
+            response:
+              type: object
+              properties: 
+                attestationObject:
+                  type: string
+                  description: attestation assinado pelo dispositivo do cliente
+                  example: o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YViUSZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2NdAAAAAOqbjWZNAR0hPOS2tIy1ddQAEMPJxNyJ0jbF46U8XgIh8jSlAQIDJiABIVggfHKO_ZeFphjfYkngfmWAsDuca-e3fc9YfM8OKlCS4cciWCCyeC1inmxSs5EmBAlVpdwKDZDkYksqe_ZOFN-uhdpNDQ
+                clientDataJSON:
+                  type: string
+                  description: dados do cliente assinado pelo dispositivo
+                  example: eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoidVl2VDRHRllkbnJsTjJnNzZHQkFjNXZObW9lc19tU2ZZSGdGT3REUldGX25qSHNucU9teHg4aElKVUJlT19Dd04xb0FzNUloWXpPTW1COTB1aW82TkFybGJFQUY2SE1BUGtRSVRuZnFBeEhnNGR0U1RSRElmTUstNVZHZWpBZENyVmVWb3JqUzA1OGVyOXNQYm0zRFNOeTAtOXNfRjVKc2NNalFUNHhfWG5jIiwib3JpZ2luIjoiaHR0cHM6Ly9sb2NhbGhvc3Q6NDEwMCIsImNyb3NzT3JpZ2luIjpmYWxzZX0
+                signature:
+                  type: string
+                  description: Assinatura da autenticação do cliente
+                  example: MEUCIHKORA4qxSLx4tP1N3WcFAVxm26B32IxHeczg0dm2FexAiEA22oNx0HG5dofYCoPzxx37KHVtICi5bO5Jq2r61UsmDU
+              required:
+              - attestationObject
+              - clientDataJSON
+              - signature
+            type:
+              type: string
+              description: tipo de chave utilizado para assinatura dos dados
+              example: public-key
+          required:
+            - id
+            - rawId
+            - response
+            - type
+        enrollmentId:
+          type: string
+          description: ID do enrollment. Este ID será utilizado como chave para posteriormente realizar a busca da chave FIDO do dispositivo do cliente.
+          example: urn:ranibank:c5effa98-b3c3-4210-b816-e7a7e915dd2e
+      required:
+        - assertion
+        - enrollmentId
+    PubKeyCredParam:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - public-key
+          description: Tipo de credencial permitida.
+        alg:
+          type: integer
+          description: |
+            Código do tipo de algoritmo permitido.
+            -7 - Certificados ES256
+            -257 - Certificados RS256
+    AllowedCredential:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID da credencial
+        type:
+          type: string
+          enum:
+            - public-key
+          description: Tipo de credencial permitida.
