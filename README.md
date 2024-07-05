@@ -3,6 +3,9 @@ Este projeto tem como intuito ser um servidor FIDO que siga os padrões definido
 
 Esta aplicação é uma implementação do [fido2-lib](https://github.com/webauthn-open-source/fido2-lib) com as customizações necessárias para atender aos critérios definidos pelo Open Finance Brasil para atendimento a Jornada sem Redirecionamento.
 
+# Setup de demonstração
+Fiz um video de demonstração de um setup completo (auth-server, api's de pagamento, cliente) para caso esteja querendo testar de ponta a ponta. Você pode ver o video [clicando aqui](https://youtu.be/PM6Wr51HYaA)
+
 # Requisitos mínimos
 Node >= 16
 
